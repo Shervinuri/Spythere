@@ -90,16 +90,25 @@
     .scroll-content .active { opacity: 1; transform: translateY(0); }
     
     #source-code-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #fdfdfd; z-index: 99999; display: none;
-        font-family: 'Menlo', 'Consolas', monospace; font-size: 14px; line-height: 1.5; color: #333;
-        overflow: auto;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      color: #000000;
+      z-index: 99999;
+      display: none;
+      font-family: var(--font-terminal);
+      font-size: 1.2em;
+      line-height: 1.5;
+      overflow: auto;
+      direction: ltr;
+      text-align: left;
+      padding: 1rem;
+      white-space: pre;
+      word-wrap: break-word;
     }
-    #source-code-overlay .editor-container { display: flex; min-height: 100%; }
-    #source-code-overlay .line-numbers { padding: 10px; text-align: right; color: #aaa; background: #f7f7f7; border-right: 1px solid #ddd; user-select: none; }
-    #source-code-overlay .code-content { padding: 10px; white-space: pre-wrap; word-wrap: break-word; flex-grow: 1; }
-
-    .token-tag { color: #d73a49; } .token-attr-name { color: #6f42c1; } .token-attr-value { color: #032f62; }
 
     .text-glitch-active { transform: translateX(1px); text-shadow: -1px 0px 0px var(--bg-color); opacity: 0.95; }
     .auto-selected { background-color: var(--selection-bg); }
@@ -112,17 +121,24 @@
         pointer-events: none; z-index: 99998; display: none;
     }
 
-    .nav-container { text-align: center; }
+    .nav-container {
+      text-align: center;
+      position: relative;
+      z-index: 101;
+    }
     .dropdown { position: relative; display: inline-block; }
     .dropdown-button { background-color: var(--primary-green); color: var(--bg-color); padding: 10px 20px; font-size: 1.2em; border: none; cursor: pointer; font-family: var(--font-terminal); }
     .dropdown-content { display: none; position: absolute; right: 0; background-color: var(--bg-color); min-width: 220px; z-index: 100; border: 1px solid var(--primary-green); padding: 0; list-style: none; margin-top: 2px; }
     .dropdown-content a { color: var(--primary-green); padding: 12px 16px; display: block; text-align: right; font-family: var(--font-terminal); }
-    .dropdown:hover .dropdown-content { display: block; }
+    
+    .dropdown.open .dropdown-content { 
+      display: block; 
+    }
 
     @media (max-width: 600px) {
       h1 { font-size: 2.2em; } h2 { font-size: 1.8em; } pre { font-size: 1em; }
       .header { flex-direction: column; gap: 10px; }
-      #source-code-overlay { font-size: 12px; }
+      #source-code-overlay { font-size: 1em; }
     }
   </style>
 </head>
@@ -233,8 +249,7 @@ with socket.create_connection((hostname, 443)) as sock:
         <div class="code-block-wrapper">
           <div class="code-block-header"><span>[BASH]</span><button class="copy-btn">کپی</button></div>
           <pre>$ SPYthere☬SHΞN™ new -s mysession
-$ SPYthere☬SHΞN™ attach -t mysession
-$ SPYthere☬SHΞN™ ls</pre>
+$SPYthere☬SHΞN™ attach -t mysession$ SPYthere☬SHΞN™ ls</pre>
         </div>
       </section>
 
@@ -243,211 +258,252 @@ $ SPYthere☬SHΞN™ ls</pre>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) entry.target.classList.add('active');
-        });
-      }, { threshold: 0.1 });
-      document.querySelectorAll('.scroll-content > *').forEach(el => observer.observe(el));
+  document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('active');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.scroll-content > *').forEach(el => observer.observe(el));
 
-      document.querySelectorAll('.copy-btn').forEach(button => {
-        button.addEventListener('click', () => {
-          const pre = button.closest('.code-block-wrapper').querySelector('pre');
-          if (!pre) return;
-          navigator.clipboard.writeText(pre.innerText).then(() => {
+    document.querySelectorAll('.copy-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const pre = button.closest('.code-block-wrapper').querySelector('pre');
+        if (!pre) return;
+        const textarea = document.createElement('textarea');
+        textarea.value = pre.innerText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
             button.textContent = 'کپی شد!';
             button.classList.add('copied');
-          }).finally(() => {
-            setTimeout(() => {
-              button.textContent = 'کپی';
-              button.classList.remove('copied');
-            }, 2000);
-          });
-        });
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textarea);
+
+        setTimeout(() => {
+          button.textContent = 'کپی';
+          button.classList.remove('copied');
+        }, 2000);
       });
-
-      const glitchEngine = {
-        isGlitching: false,
-        sourceCodeOverlay: document.getElementById('source-code-overlay'),
-        sourceCodeChunks: [],
-        touchCount: 0,
-        lastScrollY: window.scrollY,
-        dragLine: null,
-
-        init() {
-          this.prepareSourceCode();
-          this.scheduleNextGlitch(8000);
-          setTimeout(() => this.triggerLcdStain(), 25000 + Math.random() * 20000);
-          window.addEventListener('scroll', () => this.handleScroll(), { passive: true });
-          document.body.addEventListener('touchstart', () => this.handleTouch());
-        },
-
-        syntaxHighlight(html) {
-            return html.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-                .replace(/(".*?")/g, '<span class="token-attr-value">$1</span>')
-                .replace(/(&lt;\/?)([\w-]+)/g, '$1<span class="token-tag">$2</span>')
-                .replace(/([\w-]+)=/g, '<span class="token-attr-name">$1</span>=');
-        },
-
-        prepareSourceCode() {
-          const fullSource = document.documentElement.outerHTML;
-          const lines = fullSource.split('\n');
-          const chunkSize = Math.ceil(lines.length / 3);
-          for (let i = 0; i < 3; i++) {
-            this.sourceCodeChunks.push(lines.slice(i * chunkSize, (i + 1) * chunkSize));
-          }
-        },
-        
-        runSequence(sequence) {
-            if (this.isGlitching) return;
-            this.isGlitching = true;
-            let promise = Promise.resolve();
-            sequence.forEach(action => {
-                promise = promise.then(() => new Promise(resolve => {
-                    setTimeout(() => {
-                        action.func.call(this);
-                        resolve();
-                    }, action.delay);
-                }));
-            });
-            promise.then(() => { 
-                this.isGlitching = false;
-                this.scheduleNextGlitch();
-            });
-        },
-
-        scheduleNextGlitch(initialDelay = 30000 + Math.random() * 40000) {
-            setTimeout(() => {
-                const glitches = [
-                    { func: this.triggerGhostScroll, delay: 0 },
-                    { func: this.flashSourceCode, delay: 0 },
-                    { func: this.triggerSmallGlitch, delay: 0 }
-                ];
-                this.runSequence([glitches[Math.floor(Math.random() * glitches.length)]]);
-            }, initialDelay);
-        },
-
-        flashSourceCode() {
-          this.sourceCodeOverlay.style.display = 'block';
-          let page = 0;
-          const interval = setInterval(() => {
-            if (page < 3) {
-              const chunk = this.sourceCodeChunks[page];
-              let lineNumbersHTML = '';
-              for(let i = 1; i <= chunk.length; i++) { lineNumbersHTML += `${i}<br>`; }
-              const codeHTML = this.syntaxHighlight(chunk.join('\n'));
-              this.sourceCodeOverlay.innerHTML = `<div class="editor-container"><div class="line-numbers">${lineNumbersHTML}</div><pre class="code-content">${codeHTML}</pre></div>`;
-              page++;
-            } else {
-              clearInterval(interval);
-              this.sourceCodeOverlay.style.display = 'none';
-              this.sourceCodeOverlay.innerHTML = '';
-            }
-          }, 250);
-        },
-
-        triggerAutoCopy() {
-            const target = Array.from(document.querySelectorAll('p, pre')).filter(el => {
-                const rect = el.getBoundingClientRect();
-                return rect.top >= 0 && rect.bottom <= window.innerHeight;
-            }).pop();
-            if (!target) return;
-
-            const originalText = target.innerText;
-            const textToCopy = originalText.substring(0, Math.floor(originalText.length * 0.5));
-            const selectionSpan = document.createElement('span');
-            selectionSpan.className = 'auto-selected';
-            selectionSpan.textContent = textToCopy;
-            target.innerHTML = '';
-            target.appendChild(selectionSpan);
-            target.append(originalText.substring(textToCopy.length));
-            navigator.clipboard.writeText(textToCopy).catch(err => {});
-            setTimeout(() => {
-                target.innerHTML = '';
-                target.innerText = originalText;
-            }, 700);
-        },
-        
-        triggerLcdStain() {
-            const smudge = document.getElementById('lcd-smudge');
-            smudge.style.top = `${15 + Math.random() * 50}%`;
-            smudge.style.left = `${15 + Math.random() * 50}%`;
-            smudge.style.transform = `rotate(${Math.random() * 360}deg) scale(${0.8 + Math.random() * 0.4})`;
-            smudge.style.display = 'block';
-        },
-
-        triggerPixelDrag() {
-            if (this.dragLine) return;
-            this.dragLine = document.createElement('div');
-            this.dragLine.style.cssText = `position:fixed; top:0; height:100vh; width:1px; background:var(--bg-color); z-index:10000; left:${10 + Math.random() * 80}vw;`;
-            document.body.appendChild(this.dragLine);
-        },
-        
-        clearPixelDrag() {
-            if (this.dragLine) {
-                this.dragLine.remove();
-                this.dragLine = null;
-            }
-        },
-
-        triggerGhostScroll() {
-            const scrolls = [
-                { y: 150, delay: 100 },
-                { y: -250, delay: 250 },
-                { y: 100, delay: 200 },
-                { y: -50, delay: 150 }
-            ];
-            let promise = Promise.resolve();
-            scrolls.forEach(scroll => {
-                promise = promise.then(() => new Promise(resolve => {
-                    setTimeout(() => {
-                        window.scrollBy({ top: scroll.y, behavior: 'smooth' });
-                        resolve();
-                    }, scroll.delay);
-                }));
-            });
-        },
-
-        triggerSmallGlitch() {
-            const target = Array.from(document.querySelectorAll('.panel p, .code-block-wrapper pre')).filter(el => {
-                const rect = el.getBoundingClientRect();
-                return rect.top >= 0 && rect.bottom <= window.innerHeight;
-            }).pop();
-            if (!target) return;
-            target.classList.add('text-glitch-active');
-            setTimeout(() => target.classList.remove('text-glitch-active'), 100);
-        },
-
-        handleScroll() {
-            if (this.isGlitching) return;
-            const scrollDirection = window.scrollY > this.lastScrollY ? 'down' : 'up';
-            const scrollSpeed = Math.abs(window.scrollY - this.lastScrollY);
-
-            if (scrollDirection === 'down' && scrollSpeed > 250) {
-                this.triggerPixelDrag();
-            } else if (scrollDirection === 'up') {
-                this.clearPixelDrag();
-            }
-            
-            this.lastScrollY = window.scrollY;
-        },
-
-        handleTouch() {
-            if (this.isGlitching || this.touchCount > 4) return;
-            this.touchCount++;
-            if (this.touchCount === 5) {
-                this.runSequence([{ func: this.triggerAutoCopy, delay: 100 }]);
-            }
-        },
-
-        initialPrank: [
-          { func: function() { this.flashSourceCode() }, delay: 500 }
-        ]
-      };
-
-      glitchEngine.init();
     });
+
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownButton = document.querySelector('.dropdown-button');
+
+    if (dropdownButton) {
+      dropdownButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+    }
+
+    window.addEventListener('click', () => {
+      if (dropdown && dropdown.classList.contains('open')) {
+        dropdown.classList.remove('open');
+      }
+    });
+
+
+    const glitchEngine = {
+      isGlitching: false,
+      sourceCodeOverlay: document.getElementById('source-code-overlay'),
+      touchCount: 0,
+      lastScrollY: window.scrollY,
+      dragLine: null,
+      prankText: [
+            'Booting SHEN v13.0 kernel...',
+            'Kernel base: 0x' + (Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase(),
+            'Memory check: 65536 KB OK',
+            '[ 0.251342] Probing EDD (edd=off to disable)... ok',
+            '[ 1.894251] Network interface eth0 detected. MAC: 00:DE:AD:BE:EF:00',
+            '[ 3.543210] IP Address acquired: 192.168.1.101',
+            'Welcome to SPYthereSHΞN™',
+            'shen@local:~$ loading exploit module...',
+            'shen@local:~$ compiling payload (stage 1)...',
+            'gcc -o payload payload.c -O2 -Wall',
+            'shen@local:~$ executing payload...',
+            'Injecting into process ID ' + Math.floor(Math.random() * (9999 - 1000 + 1) + 1000) + '...',
+            'Establishing reverse shell to 10.0.0.5:4444...',
+            'Connection established.',
+            'Success! Gained root access.',
+            'shen@local:~$ cleaning tracks...',
+            'shen@local:~$ rm -rf /var/log/auth.log',
+            '[ 1.894251] Network interface eth0 detected. MAC: 00:DE:AD:BE:EF:00',
+            '[ 3.543210] IP Address acquired: 192.168.1.101',
+            'Welcome to SPYthereSHΞN™',
+            'shen@local:~$ loading exploit module...',
+            'shen@local:~$ compiling payload (stage 1)...',
+            'gcc -o payload payload.c -O2 -Wall',
+            'shen@local:~$ executing payload...',
+            'Injecting into process ID ' + Math.floor(Math.random() * (9999 - 1000 + 1) + 1000) + '...',
+            'Establishing reverse shell to 10.0.0.5:4444...',
+            'Connection established.',
+            'Success! Gained root access.',            'shen@local:~$ exit',
+        ].join('\n'),
+
+      init() {
+        this.scheduleNextGlitch(8000);
+        setTimeout(() => this.triggerLcdStain(), 25000 + Math.random() * 20000);
+        window.addEventListener('scroll', () => this.handleScroll(), { passive: true });
+        document.body.addEventListener('touchstart', () => this.handleTouch());
+      },
+      
+      runSequence(sequence) {
+          if (this.isGlitching) return;
+          this.isGlitching = true;
+          let promise = Promise.resolve();
+          sequence.forEach(action => {
+              promise = promise.then(() => new Promise(resolve => {
+                  setTimeout(() => {
+                      action.func.call(this);
+                      resolve();
+                  }, action.delay);
+              }));
+          });
+          promise.then(() => { 
+              this.isGlitching = false;
+              this.scheduleNextGlitch();
+          });
+      },
+
+      scheduleNextGlitch(initialDelay = 30000 + Math.random() * 40000) {
+          setTimeout(() => {
+              const glitches = [
+                  { func: this.triggerGhostScroll, delay: 0 },
+                  { func: this.flashSourceCode, delay: 0 },
+                  { func: this.triggerSmallGlitch, delay: 0 }
+              ];
+              this.runSequence([glitches[Math.floor(Math.random() * glitches.length)]]);
+          }, initialDelay);
+      },
+
+      // === PRANK FUNCTION DURATION - CHANGED ===
+      flashSourceCode() {
+        this.sourceCodeOverlay.textContent = this.prankText;
+        this.sourceCodeOverlay.style.display = 'block';
+        
+        // Hide it after 800 milliseconds
+        setTimeout(() => {
+            this.sourceCodeOverlay.style.display = 'none';
+            this.sourceCodeOverlay.textContent = '';
+        }, 800); 
+      },
+
+      triggerAutoCopy() {
+          const target = Array.from(document.querySelectorAll('p, pre')).filter(el => {
+              const rect = el.getBoundingClientRect();
+              return rect.top >= 0 && rect.bottom <= window.innerHeight;
+          }).pop();
+          if (!target) return;
+
+          const originalText = target.innerText;
+          const textToCopy = originalText.substring(0, Math.floor(originalText.length * 0.5));
+          const selectionSpan = document.createElement('span');
+          selectionSpan.className = 'auto-selected';
+          selectionSpan.textContent = textToCopy;
+          target.innerHTML = '';
+          target.appendChild(selectionSpan);
+          target.append(originalText.substring(textToCopy.length));
+          
+          const textarea = document.createElement('textarea');
+          textarea.value = textToCopy;
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+          } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+          }
+          document.body.removeChild(textarea);
+
+          setTimeout(() => {
+              target.innerHTML = '';
+              target.innerText = originalText;
+          }, 700);
+      },
+      
+      triggerLcdStain() {
+          const smudge = document.getElementById('lcd-smudge');
+          smudge.style.top = `${15 + Math.random() * 50}%`;
+          smudge.style.left = `${15 + Math.random() * 50}%`;
+          smudge.style.transform = `rotate(${Math.random() * 360}deg) scale(${0.8 + Math.random() * 0.4})`;
+          smudge.style.display = 'block';
+      },
+
+      triggerPixelDrag() {
+          if (this.dragLine) return;
+          this.dragLine = document.createElement('div');
+          this.dragLine.style.cssText = `position:fixed; top:0; height:100vh; width:1px; background:var(--bg-color); z-index:10000; left:${10 + Math.random() * 80}vw;`;
+          document.body.appendChild(this.dragLine);
+      },
+      
+      clearPixelDrag() {
+          if (this.dragLine) {
+              this.dragLine.remove();
+              this.dragLine = null;
+          }
+      },
+
+      triggerGhostScroll() {
+          const scrolls = [
+              { y: 150, delay: 100 },
+              { y: -250, delay: 250 },
+              { y: 100, delay: 200 },
+              { y: -50, delay: 150 }
+          ];
+          let promise = Promise.resolve();
+          scrolls.forEach(scroll => {
+              promise = promise.then(() => new Promise(resolve => {
+                  setTimeout(() => {
+                      window.scrollBy({ top: scroll.y, behavior: 'smooth' });
+                      resolve();
+                  }, scroll.delay);
+              }));
+          });
+      },
+
+      triggerSmallGlitch() {
+          const target = Array.from(document.querySelectorAll('.panel p, .code-block-wrapper pre')).filter(el => {
+              const rect = el.getBoundingClientRect();
+              return rect.top >= 0 && rect.bottom <= window.innerHeight;
+          }).pop();
+          if (!target) return;
+          target.classList.add('text-glitch-active');
+          setTimeout(() => target.classList.remove('text-glitch-active'), 100);
+      },
+
+      handleScroll() {
+          if (this.isGlitching) return;
+          const scrollDirection = window.scrollY > this.lastScrollY ? 'down' : 'up';
+          const scrollSpeed = Math.abs(window.scrollY - this.lastScrollY);
+
+          if (scrollDirection === 'down' && scrollSpeed > 250) {
+              this.triggerPixelDrag();
+          } else if (scrollDirection === 'up') {
+              this.clearPixelDrag();
+          }
+          
+          this.lastScrollY = window.scrollY;
+      },
+
+      handleTouch() {
+          if (this.isGlitching || this.touchCount > 4) return;
+          this.touchCount++;
+          if (this.touchCount === 5) {
+              this.runSequence([{ func: this.triggerAutoCopy, delay: 100 }]);
+          }
+      },
+
+      initialPrank: [
+        { func: function() { this.flashSourceCode() }, delay: 500 }
+      ]
+    };
+
+    glitchEngine.init();
+  });
   </script>
 </body>
 </html>
